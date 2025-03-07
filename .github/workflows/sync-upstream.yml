@@ -1,0 +1,36 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    - cron: "0 0 * * *"  # Runs daily at midnight (UTC)
+  workflow_dispatch:  # Allows manual execution
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout forked repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false  # Disable automatic authentication
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/NikolaiT/IP-Address-API.git
+          git fetch upstream
+
+      - name: Merge upstream changes
+        run: |
+          git checkout main
+          git merge --allow-unrelated-histories --no-edit upstream/main || echo "No new changes to merge"
+
+      - name: Push changes to forked repo
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git push origin main || echo "No changes to push"
